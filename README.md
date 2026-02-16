@@ -5,7 +5,8 @@
 
 \
 \
-SpellOverlay Enhanced is a lightweight yet powerful tool that gives you complete control over Blizzard's built-in Spell Activation Overlays (procs). Whether you want to resize, recolor, move, or add a dynamic pulse effect to your procs.\
+SpellOverlay Enhanced is a lightweight yet powerful tool that gives you complete control over Blizzard's built-in Spell Activation Overlays (procs). Whether you want to resize, recolor, move, or add a dynamic pulse effect to your procs.
+
 
 **Features**
 
