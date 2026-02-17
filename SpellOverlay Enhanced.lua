@@ -92,6 +92,7 @@ local defaults = {
                 global = {
                     scale = 1.0, 
                     x = nil, y = nil, x2 = nil, y2 = nil,
+                    rotation = 0, rotation2 = 0, -- [NEW]
                     alpha = 1.0, alpha2 = 1.0,
                     desaturate = false,
                     blendMode = "BLEND",
@@ -111,6 +112,7 @@ local defaults = {
 
 local DUMMY_CONFIG = {
     scale = 1.0, x = 0, y = 0, x2 = 0, y2 = 0, 
+    rotation = 0, rotation2 = 0, --
     alpha = 1.0, alpha2 = 1.0,
     desaturate = false, gradient = "NONE", blendMode = "BLEND",
     color = { r = 1, g = 1, b = 1, a = 1 },
@@ -226,7 +228,7 @@ function SOE:GetSpellIDFromKey(key)
 end
 
 function SOE:ResolveDefaultsFor(groupName)
-    local d = { x = 0, y = 0, x2 = 0, y2 = 0 }
+    local d = { x = 0, y = 0, x2 = 0, y2 = 0, rotation = 0, rotation2 = 0 }
     if not groupName then return d end
     
     -- [1] Hardcoded Categories take priority
@@ -396,13 +398,15 @@ function SOE:ApplyToOverlay(overlay)
     local mainW, mainH = baseW, baseH
     local offsetX = settings.x or 0
     local offsetY = settings.y or 0
+    local targetRotation = settings.rotation or 0
 
     if isDualProc then
         if isRightSide then
-            offsetX = settings.x2 ~= 0 and settings.x2 or 150
-            offsetY = settings.y2 ~= 0 and settings.y2 or 0
+            offsetX = settings.x2 or 0
+            offsetY = settings.y2 or 0
+            targetRotation = settings.rotation2 or 0
         else
-            offsetX = settings.x ~= 0 and settings.x or -150
+            offsetX = settings.x or 0
         end
     end
 
@@ -430,6 +434,7 @@ function SOE:ApplyToOverlay(overlay)
     -- [6] APPLY COLORS & TEXTURE STYLING
     mainTexture:SetDesaturated(settings.desaturate)
     mainTexture:SetBlendMode(settings.blendMode or "BLEND")
+    mainTexture:SetRotation(math.rad(targetRotation)) --
     
     local r1, g1, b1, a1 = UnpackColor(settings.color)
     local r2, g2, b2, a2 = UnpackColor(settings.color2)
@@ -457,7 +462,8 @@ function SOE:ApplyToOverlay(overlay)
         end
         glow:SetTexCoord(mainTexture:GetTexCoord())
         glow:SetBlendMode(settings.borderBlendMode or "ADD")
-        
+        glow:SetRotation(math.rad(targetRotation)) --
+
         local bScale = settings.borderScale or 1.05
         glow:SetSize(mainW * scale * bScale, mainH * scale * bScale)
         
@@ -798,12 +804,16 @@ function SOE:GetOptions()
                         order = 10, type = "group", name = "Positioning", inline = true, disabled = function() return not selectedSpecID end,
                         args = {
                             scale = { order = 1, type = "range", name = "Scale", min = 0, max = 2.0, step = 0.01, isPercent = true, width = "fill", get = function() return SOE:GetEditingConfig().scale end, set = function(_, val) SOE:GetEditingConfig().scale = val; SOE:RefreshAllOverlays() end },
-                            header1 = { order = 10, type = "header", name = function() return IsDual() and "Left Texture" or "Offset" end },
+                            
+                            header1 = { order = 10, type = "header", name = function() return IsDual() and "Left Texture" or "Offset & Rotation" end },
                             posX = { order = 11, type = "range", name = "X Offset", min = -500, max = 500, step = 1, width = "fill", get = function() return SOE:GetEditingConfig().x end, set = function(_, val) SOE:GetEditingConfig().x = val; SOE:RefreshAllOverlays() end },
                             posY = { order = 12, type = "range", name = "Y Offset", min = -500, max = 500, step = 1, width = "fill", get = function() return SOE:GetEditingConfig().y end, set = function(_, val) SOE:GetEditingConfig().y = val; SOE:RefreshAllOverlays() end },
+                            rotation = { order = 13, type = "range", name = "Rotation (Degrees)", min = 0, max = 360, step = 1, width = "fill", get = function() return SOE:GetEditingConfig().rotation end, set = function(_, val) SOE:GetEditingConfig().rotation = val; SOE:RefreshAllOverlays() end },
+                            
                             header2 = { order = 20, type = "header", name = "Right Texture", hidden = function() return not IsDual() end },
                             posX2 = { order = 21, type = "range", name = "X Offset (Right)", min = -500, max = 500, step = 1, width = "fill", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().x2 end, set = function(_, val) SOE:GetEditingConfig().x2 = val; SOE:RefreshAllOverlays() end },
                             posY2 = { order = 22, type = "range", name = "Y Offset (Right)", min = -500, max = 500, step = 1, width = "fill", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().y2 end, set = function(_, val) SOE:GetEditingConfig().y2 = val; SOE:RefreshAllOverlays() end },
+                            rotation2 = { order = 23, type = "range", name = "Rotation (Right)", min = 0, max = 360, step = 1, width = "fill", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().rotation2 end, set = function(_, val) SOE:GetEditingConfig().rotation2 = val; SOE:RefreshAllOverlays() end },
                         }
                     },
                     visuals = {
