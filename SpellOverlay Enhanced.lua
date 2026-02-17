@@ -25,13 +25,14 @@ local DUAL_PROCS = {
 
 local LEFT_PROCS = {
     ["Lunar Eclipse"] = true, ["Galactic Guardian"] = true,
-    ["Blackout Kick!"] = true,
     ["Shield Slam"] = true,
+    ["Strenght of the Black Ox"] = true,
 }
 
 local RIGHT_PROCS = {
     ["Solar Eclipse"] = true,
     ["Riposte"] = true,
+    ["Blackout Kick!"] = true,
 }
 
 local SUPPRESSED_BY = {
@@ -92,7 +93,9 @@ local defaults = {
                 global = {
                     scale = 1.0, 
                     x = nil, y = nil, x2 = nil, y2 = nil,
-                    rotation = 0, rotation2 = 0, -- [NEW]
+                    rotation = 0, rotation2 = 0,
+                    mirror = false, mirror2 = false,
+                    width = 0, height = 0, width2 = 0, height2 = 0, -- [NEW]
                     alpha = 1.0, alpha2 = 1.0,
                     desaturate = false,
                     blendMode = "BLEND",
@@ -112,7 +115,9 @@ local defaults = {
 
 local DUMMY_CONFIG = {
     scale = 1.0, x = 0, y = 0, x2 = 0, y2 = 0, 
-    rotation = 0, rotation2 = 0, --
+    rotation = 0, rotation2 = 0, 
+    mirror = false, mirror2 = false,
+    width = 0, height = 0, width2 = 0, height2 = 0, -- [NEW]
     alpha = 1.0, alpha2 = 1.0,
     desaturate = false, gradient = "NONE", blendMode = "BLEND",
     color = { r = 1, g = 1, b = 1, a = 1 },
@@ -228,7 +233,11 @@ function SOE:GetSpellIDFromKey(key)
 end
 
 function SOE:ResolveDefaultsFor(groupName)
-    local d = { x = 0, y = 0, x2 = 0, y2 = 0, rotation = 0, rotation2 = 0 }
+    local d = { 
+        x = 0, y = 0, x2 = 0, y2 = 0, 
+        rotation = 0, rotation2 = 0, mirror = false, mirror2 = false,
+        width = 0, height = 0, width2 = 0, height2 = 0
+    }
     if not groupName then return d end
     
     -- [1] Hardcoded Categories take priority
@@ -378,14 +387,20 @@ function SOE:ApplyToOverlay(overlay)
     local glow = overlay.SOE_Glow
 
     -- [3] POSITIONAL LOGIC & BASE SIZE
-    local ULx = 0 
-    if mainTexture then ULx = mainTexture:GetTexCoord() end
+    
+    -- Cache original coordinates to prevent infinite mirroring loops
+    if not overlay.SOE_BaseCoords or overlay.SOE_LastSpellBase ~= overlay.spellID then
+        overlay.SOE_BaseCoords = { mainTexture:GetTexCoord() }
+        overlay.SOE_LastSpellBase = overlay.spellID
+    end
+    
+    local c = overlay.SOE_BaseCoords
+    local ULx = c[1] or 0 
     local isRightSide = (ULx and ULx > 0.5) 
     
     local groupName = currentGroup 
     local isDualProc = groupName and DUAL_PROCS[groupName]
 
-    -- Use securely cached baseline sizes to prevent scaling loops
     local baseW, baseH = 256, 256
     if overlay.IsDummy then
         baseW = overlay.SOE_OrigW or 256
@@ -399,16 +414,21 @@ function SOE:ApplyToOverlay(overlay)
     local offsetX = settings.x or 0
     local offsetY = settings.y or 0
     local targetRotation = settings.rotation or 0
+    local targetMirror = settings.mirror or false
+    local targetWidth = settings.width or 0
+    local targetHeight = settings.height or 0
 
-    if isDualProc then
-        if isRightSide then
-            offsetX = settings.x2 or 0
-            offsetY = settings.y2 or 0
-            targetRotation = settings.rotation2 or 0
-        else
-            offsetX = settings.x or 0
-        end
+    if isDualProc and isRightSide then
+        offsetX = settings.x2 or 0
+        offsetY = settings.y2 or 0
+        targetRotation = settings.rotation2 or 0
+        targetMirror = settings.mirror2 or false
+        targetWidth = settings.width2 or 0
+        targetHeight = settings.height2 or 0
     end
+
+    if targetWidth > 0 then mainW = targetWidth end
+    if targetHeight > 0 then mainH = targetHeight end
 
     -- [4] CALCULATE VISUALS & PULSE
     local pulseFactor = 1.0
@@ -431,15 +451,23 @@ function SOE:ApplyToOverlay(overlay)
         overlay:SetPoint("CENTER", UIParent, "CENTER", offsetX, offsetY)
     end
 
-    -- [6] APPLY COLORS & TEXTURE STYLING
+    -- [6] APPLY SYMMETRY, COLORS & TEXTURE STYLING
     mainTexture:SetDesaturated(settings.desaturate)
     mainTexture:SetBlendMode(settings.blendMode or "BLEND")
-    mainTexture:SetRotation(math.rad(targetRotation)) --
+    
+    -- Rotation
+    mainTexture:SetRotation(math.rad(targetRotation))
+    
+    -- Mirroring (Swaps the Left X and Right X texture coordinates)
+    if targetMirror then
+        mainTexture:SetTexCoord(c[5], c[6], c[7], c[8], c[1], c[2], c[3], c[4])
+    else
+        mainTexture:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
+    end
     
     local r1, g1, b1, a1 = UnpackColor(settings.color)
     local r2, g2, b2, a2 = UnpackColor(settings.color2)
 
-    -- Inject pulse directly into Vertex/Gradient colors to bypass Blizzard's alpha overrides
     local combinedAlpha1 = a1 * finalAlpha
     local combinedAlpha2 = a2 * finalAlpha
 
@@ -460,10 +488,16 @@ function SOE:ApplyToOverlay(overlay)
                 glow:SetTexture(mainTexture:GetTexture()) 
             end
         end
-        glow:SetTexCoord(mainTexture:GetTexCoord())
         glow:SetBlendMode(settings.borderBlendMode or "ADD")
-        glow:SetRotation(math.rad(targetRotation)) --
-
+        
+        -- Sync Glow Symmetry
+        glow:SetRotation(math.rad(targetRotation))
+        if targetMirror then
+            glow:SetTexCoord(c[5], c[6], c[7], c[8], c[1], c[2], c[3], c[4])
+        else
+            glow:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
+        end
+        
         local bScale = settings.borderScale or 1.05
         glow:SetSize(mainW * scale * bScale, mainH * scale * bScale)
         
@@ -805,15 +839,64 @@ function SOE:GetOptions()
                         args = {
                             scale = { order = 1, type = "range", name = "Scale", min = 0, max = 2.0, step = 0.01, isPercent = true, width = "fill", get = function() return SOE:GetEditingConfig().scale end, set = function(_, val) SOE:GetEditingConfig().scale = val; SOE:RefreshAllOverlays() end },
                             
-                            header1 = { order = 10, type = "header", name = function() return IsDual() and "Left Texture" or "Offset & Rotation" end },
+                            header1 = { order = 10, type = "header", name = function() return IsDual() and "Left Texture" or "Offset" end },
                             posX = { order = 11, type = "range", name = "X Offset", min = -500, max = 500, step = 1, width = "fill", get = function() return SOE:GetEditingConfig().x end, set = function(_, val) SOE:GetEditingConfig().x = val; SOE:RefreshAllOverlays() end },
                             posY = { order = 12, type = "range", name = "Y Offset", min = -500, max = 500, step = 1, width = "fill", get = function() return SOE:GetEditingConfig().y end, set = function(_, val) SOE:GetEditingConfig().y = val; SOE:RefreshAllOverlays() end },
-                            rotation = { order = 13, type = "range", name = "Rotation (Degrees)", min = 0, max = 360, step = 1, width = "fill", get = function() return SOE:GetEditingConfig().rotation end, set = function(_, val) SOE:GetEditingConfig().rotation = val; SOE:RefreshAllOverlays() end },
                             
                             header2 = { order = 20, type = "header", name = "Right Texture", hidden = function() return not IsDual() end },
                             posX2 = { order = 21, type = "range", name = "X Offset (Right)", min = -500, max = 500, step = 1, width = "fill", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().x2 end, set = function(_, val) SOE:GetEditingConfig().x2 = val; SOE:RefreshAllOverlays() end },
                             posY2 = { order = 22, type = "range", name = "Y Offset (Right)", min = -500, max = 500, step = 1, width = "fill", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().y2 end, set = function(_, val) SOE:GetEditingConfig().y2 = val; SOE:RefreshAllOverlays() end },
-                            rotation2 = { order = 23, type = "range", name = "Rotation (Right)", min = 0, max = 360, step = 1, width = "fill", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().rotation2 end, set = function(_, val) SOE:GetEditingConfig().rotation2 = val; SOE:RefreshAllOverlays() end },
+                        }
+                    },
+                    symmetry = {
+                        order = 11, type = "group", name = "Symmetry & Size", inline = true, disabled = function() return not selectedSpecID end,
+                        args = {
+                            header1 = { order = 1, type = "header", name = function() return IsDual() and "Left Texture" or "Rotation, Mirror & Size" end },
+                            rotation = { order = 2, type = "range", name = "Rotation (Degrees)", min = 0, max = 360, step = 1, width = "normal", get = function() return SOE:GetEditingConfig().rotation end, set = function(_, val) SOE:GetEditingConfig().rotation = val; SOE:RefreshAllOverlays() end },
+                            mirror = { order = 3, type = "toggle", name = "Mirror Horizontally", width = "normal", get = function() return SOE:GetEditingConfig().mirror end, set = function(_, val) SOE:GetEditingConfig().mirror = val; SOE:RefreshAllOverlays() end },
+                            
+                            -- [SMART SLIDERS] Fetches from the snapshot database if the user hasn't set a custom override
+                            width = { order = 4, type = "range", name = "Width", min = 10, max = 1000, step = 1, width = "normal", 
+                                get = function() 
+                                    local w = SOE:GetEditingConfig().width or 0
+                                    if w > 0 then return w end
+                                    local snap = SOE.db.global.snapshots[selectedGroupName]
+                                    return (snap and snap.left and snap.left.width) and snap.left.width or 256
+                                end, 
+                                set = function(_, val) SOE:GetEditingConfig().width = val; SOE:RefreshAllOverlays() end 
+                            },
+                            height = { order = 5, type = "range", name = "Height", min = 10, max = 1000, step = 1, width = "normal", 
+                                get = function() 
+                                    local h = SOE:GetEditingConfig().height or 0
+                                    if h > 0 then return h end
+                                    local snap = SOE.db.global.snapshots[selectedGroupName]
+                                    return (snap and snap.left and snap.left.height) and snap.left.height or 256
+                                end, 
+                                set = function(_, val) SOE:GetEditingConfig().height = val; SOE:RefreshAllOverlays() end 
+                            },
+                            
+                            header2 = { order = 10, type = "header", name = "Right Texture", hidden = function() return not IsDual() end },
+                            rotation2 = { order = 11, type = "range", name = "Rotation (Right)", min = 0, max = 360, step = 1, width = "normal", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().rotation2 end, set = function(_, val) SOE:GetEditingConfig().rotation2 = val; SOE:RefreshAllOverlays() end },
+                            mirror2 = { order = 12, type = "toggle", name = "Mirror (Right)", width = "normal", hidden = function() return not IsDual() end, get = function() return SOE:GetEditingConfig().mirror2 end, set = function(_, val) SOE:GetEditingConfig().mirror2 = val; SOE:RefreshAllOverlays() end },
+                            
+                            width2 = { order = 13, type = "range", name = "Width (Right)", min = 10, max = 1000, step = 1, width = "normal", hidden = function() return not IsDual() end, 
+                                get = function() 
+                                    local w = SOE:GetEditingConfig().width2 or 0
+                                    if w > 0 then return w end
+                                    local snap = SOE.db.global.snapshots[selectedGroupName]
+                                    return (snap and snap.right and snap.right.width) and snap.right.width or 256
+                                end, 
+                                set = function(_, val) SOE:GetEditingConfig().width2 = val; SOE:RefreshAllOverlays() end 
+                            },
+                            height2 = { order = 14, type = "range", name = "Height (Right)", min = 10, max = 1000, step = 1, width = "normal", hidden = function() return not IsDual() end, 
+                                get = function() 
+                                    local h = SOE:GetEditingConfig().height2 or 0
+                                    if h > 0 then return h end
+                                    local snap = SOE.db.global.snapshots[selectedGroupName]
+                                    return (snap and snap.right and snap.right.height) and snap.right.height or 256
+                                end, 
+                                set = function(_, val) SOE:GetEditingConfig().height2 = val; SOE:RefreshAllOverlays() end 
+                            },
                         }
                     },
                     visuals = {
