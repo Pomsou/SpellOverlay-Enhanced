@@ -17,6 +17,7 @@ SpellOverlay Enhanced is a lightweight yet powerful tool that gives you complete
 + Dual Proc Support: Independently position "Left" and "Right" textures for abilities like Brain Freeze or Killing Machine.
 + Spec-Specific Profiles: Settings are saved per Specialization, so your Frost Mage and Holy Priest setups never conflict.
 + Preview: After getting a proc, there's a Preview button that works as a snapshot for better visibility on edits.
++ Border, Rotate, Mirror and Desaturate: Functions over the texture to edit to your liking.
 
 **How to Use**
 
