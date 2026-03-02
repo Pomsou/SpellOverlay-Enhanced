@@ -61,7 +61,7 @@ local SPELL_GROUPS = {
     [255] = { ["Howl of the Pack Leader"] = { 472325 } },
     [251] = { ["Rime"] = { 59052 }, ["Killing Machine"] = { 51124 } },
     [252] = { ["Sudden Doom"] = { 81340 } },
-    [250] = { ["Crimson Scourge"] = { 81141 } },
+    [250] = { ["Crimson Scourge"] = { 81141 }, ["Dance of Midnight"] = { 1264568 } },
     [260] = { ["Opportunity"] = { 195627 } },
     [72] = { ["Rampage"] = { 209697 } },
     [71] = { ["Tactician"] = { 199864 } },
@@ -389,14 +389,16 @@ function SOE:ApplyToOverlay(overlay)
     -- [3] POSITIONAL LOGIC & BASE SIZE
     
     -- Cache original coordinates to prevent infinite mirroring loops
-    if not overlay.SOE_BaseCoords or overlay.SOE_LastSpellBase ~= overlay.spellID then
+    -- Added a check for overlay.position so recycled frames don't keep hiding or overlapping
+    if not overlay.SOE_BaseCoords or overlay.SOE_LastSpellBase ~= overlay.spellID or overlay.SOE_LastPos ~= overlay.position then
         overlay.SOE_BaseCoords = { mainTexture:GetTexCoord() }
         overlay.SOE_LastSpellBase = overlay.spellID
+        overlay.SOE_LastPos = overlay.position
     end
     
     local c = overlay.SOE_BaseCoords
     local ULx = c[1] or 0 
-    local isRightSide = (ULx and ULx > 0.5) 
+    local isRightSide = (overlay.position and string.find(string.lower(overlay.position), "right")) or (ULx and ULx > 0.5)
     
     local groupName = currentGroup 
     local isDualProc = groupName and DUAL_PROCS[groupName]
@@ -1013,24 +1015,25 @@ function SOE:OnEnable()
         end)
 
         local function HookHandler(self, spellID, texturePath, position, scale, r, g, b)
+            -- Ignore the parent wrapper call that triggers the two sub-frames
+            if position == "Left + Right (Flipped)" then return end 
+            
             if self.overlayPool then
                 for overlay in self.overlayPool:EnumerateActive() do
-                    if overlay.spellID == spellID then
+                    -- Ensure we ONLY target the frame matching the exact position event
+                    if overlay.spellID == spellID and overlay.position == position then
                         
-                        -- [THE SILVER BULLET FIX]
-                        -- Instantly fast-forward the intro animation to its final frame.
-                        -- This entirely skips the zoom-in visual and forces the frame to 100% opacity instantly.
                         if overlay.animIn and overlay.animIn:IsPlaying() then
                             overlay.animIn:Finish()
                         end
                         
-                        -- Calculate the perfect 100% native size by mathematically stripping out
-                        -- Blizzard's dynamic scale modifiers (which caused the ~95% size issue).
-                        local blizzScale = scale or 1.0
-                        local w, h = overlay:GetSize()
-                        overlay.SOE_OrigW = w / blizzScale
-                        overlay.SOE_OrigH = h / blizzScale
-                        overlay.SOE_LastSpell = spellID
+                        if not overlay.SOE_Hooked or overlay.SOE_LastSpell ~= spellID then
+                            local blizzScale = scale or 1.0
+                            local w, h = overlay:GetSize()
+                            overlay.SOE_OrigW = w / blizzScale
+                            overlay.SOE_OrigH = h / blizzScale
+                            overlay.SOE_LastSpell = spellID
+                        end
                         
                         if texturePath then 
                             overlay.SOE_RealTexture = texturePath 
@@ -1040,7 +1043,6 @@ function SOE:OnEnable()
                         end
                         
                         overlay.SOE_OrigScale = 1.0
-                        overlay.SOE_Pos = position
 
                         SOE:EnsureHelperExists(overlay)
                         if not overlay.IsDummy then 
