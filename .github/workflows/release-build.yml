@@ -182,24 +182,6 @@ jobs:
         run: |
           echo ::notice::Uploads CurseForge=${uploadCurseForge}, BigWigs-UploadOptions=${bigWigsUploads}
           echo ::notice::Build Artifact=${buildArtifactFilename}, SHA256=${buildArtifactChecksum}
-
-      - name: Create a draft release
-        id: create_draft_release
-        if: ${{ env.createDraftRelease != 'false' }}
-        uses: release-drafter/release-drafter@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag: ${{ env.refName }}
-          name: ${{ env.refName }}
-          version: ${{ env.refName }}
-          prerelease: false
-          footer: |
-            <br><br>
-            #### ${{ env.buildArtifactFilename }}
-            ```text
-            sha256:${{ env.buildArtifactChecksum }}
-            ```
       ## ------------------------------------------------ ##
       ## https://github.com/actions/upload-artifact
       - name: Upload Build Artifact File
@@ -209,14 +191,28 @@ jobs:
           name: ${{ env.buildArtifactFilename }}
           path: ${{ env.buildArtifact }}
           retention-days: ${{ env.artifact_retentionDays }}
+
       ## ------------------------------------------------ ##
-      - name: Upload Release Artifact
-        if: ${{ env.createDraftRelease == 'true' }}
-        uses: actions/upload-release-asset@v1
+      - name: Append SHA to Changelog
+        if: ${{ env.createDraftRelease != 'false' }}
+        run: |
+          echo "<br><br>" >> CHANGELOG.txt
+          echo "#### ${{ env.buildArtifactFilename }}" >> CHANGELOG.txt
+          echo "\`\`\`text" >> CHANGELOG.txt
+          echo "sha256:${{ env.buildArtifactChecksum }}" >> CHANGELOG.txt
+          echo "\`\`\`" >> CHANGELOG.txt
+
+      ## ------------------------------------------------ ##
+      - name: Publish Draft Release
+        if: ${{ env.createDraftRelease != 'false' }}
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_draft_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ${{ env.buildArtifact }}
-          asset_name: ${{ env.buildArtifactFilename }}
-          asset_content_type: application/zip
+          name: ${{ env.refName }}
+          tag_name: ${{ env.refName }}
+          body_path: CHANGELOG.txt
+          draft: true
+          prerelease: false
+          files: ${{ env.buildArtifact }}
+          
