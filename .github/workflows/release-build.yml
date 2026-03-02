@@ -70,7 +70,7 @@ jobs:
       - name: "Set ENV Variable: buildBasePath & buildArtifactFilename"
         run: |
           echo buildBasePath="${releaseDir}/${addonName}" >> $GITHUB_ENV
-          echo buildArtifactFilename="${addonName}-${refName}.zip"  >> $GITHUB_ENV
+          echo buildArtifactFilename="SpellOverlay_Enhanced-${refName}.zip"  >> $GITHUB_ENV
       ## ------------------------------------------------ ##
       - name: "Set ENV Variable: buildArtifact"
         run: |
