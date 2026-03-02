@@ -142,6 +142,9 @@ jobs:
         with:
           args: -r ${releaseDir} ${bigWigsUploads} ${packagerOptions}
       ## ------------------------------------------------ ##
+      - name: "Debug: List Release Directory contents"
+        run: ls -l ${releaseDir}
+      ## ------------------------------------------------ ##
       - name: "Verify Build Artifact Exists: ${{ env.buildArtifact }}"
         uses: andstor/file-existence-action@v3
         with:
