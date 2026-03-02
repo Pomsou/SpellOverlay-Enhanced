@@ -38,7 +38,7 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: archlinux-latest
+    runs-on: linux-latest
     permissions:
       # write permission is required to create a github release
       contents: write
