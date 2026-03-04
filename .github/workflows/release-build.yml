@@ -3,8 +3,6 @@ name: Release Build
 on:
   push:
     tags: [ '[0-9]+.[0-9]+.[0-9]+' ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
       createAddOnChangeLog:
@@ -23,7 +21,7 @@ on:
         type: boolean
 
 env:
-  addonName: SpellOverlay Enhanced
+  addonName: SpellOverlay-Enhanced
   curseForgeProjectId: 1455915
   uploadBuildArtifacts: true
   artifact_retentionDays: 7
@@ -31,7 +29,6 @@ env:
   refName: ${{ github.ref_name }}
   repo: SpellOverlay-Enhanced
   createAddOnChangeLog: true
-  ## When Debugging Issues, set the vars below to false
   createDraftRelease: true
   uploadCurseForge: true
 
@@ -40,12 +37,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     permissions:
-      # write permission is required to create a github release
       contents: write
-      # write permission is required for autolabeler
       pull-requests: write
     steps:
-      ## See: https://github.com/actions/github-script
+      ## ------------------------------------------------ ##
       - name: "Set Env Variable: GITHUB_SHA_SHORT"
         uses: actions/github-script@v7
         with:
@@ -68,44 +63,21 @@ jobs:
       - name: "Set ENV Variable: buildBasePath & buildArtifactFilename"
         run: |
           echo buildBasePath="${releaseDir}/${addonName}" >> $GITHUB_ENV
-          echo buildArtifactFilename="SpellOverlay_Enhanced-${refName}.zip"  >> $GITHUB_ENV
+          echo buildArtifactFilename="SpellOverlay_Enhanced-${refName}.zip" >> $GITHUB_ENV
       ## ------------------------------------------------ ##
       - name: "Set ENV Variable: buildArtifact"
         run: |
           echo buildArtifact="${releaseDir}/${buildArtifactFilename}" >> $GITHUB_ENV
-          echo sha256Script="./dev/sha256.sh" >> $GITHUB_ENV
+      ## ------------------------------------------------ ##
       - name: "Set ENV Variable: Upload to CurseForge"
         if: ${{ env.uploadCurseForge != 'false' }}
         run: |
           echo uploadCurseForge="${uploadCurseForge}"
           echo bigWigsUploads="${bigWigsUploads} -p ${curseForgeProjectId}" >> $GITHUB_ENV
           echo CF_API_KEY="${{ secrets.CF_API_KEY }}" >> $GITHUB_ENV
-
       ## ------------------------------------------------ ##
-      - name: Print Environment Variables
-        run: |
-          echo HOME=${HOME}
-          echo -------------------------------
-          echo uploadCurseForge=${uploadCurseForge}
-          echo createDraftRelease=${createDraftRelease}
-          echo -------------------------------
-          echo bigWigsUploads=${bigWigsUploads}
-          echo releaseDir=${releaseDir}
-          echo refName=${refName}
-          echo packagerOptions=${packagerOptions}
-          echo addonName=${addonName}
-          echo buildArtifact=${buildArtifact}
-          echo buildBasePath=${buildBasePath}
-          echo buildArtifactFilename=${buildArtifactFilename}
-          echo artifact_retentionDays=${artifact_retentionDays}
-          echo sha256Script=${sha256Script}
-          echo -------------------------------
-          echo "All ENV Vars:"
-          echo "$(env|sort)"
-      ## ------------------------------------------------ ##
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
-      with:
+        with:
           fetch-depth: 0
           fetch-tags: true
       ## ------------------------------------------------ ##
@@ -125,26 +97,24 @@ jobs:
           c_changeLog="$(envsubst < ${GITHUB_WORKSPACE}/.github/changelog-custom.md)"
           CHANGELOG_FILE="${GITHUB_WORKSPACE}/CHANGELOG.txt"
           
-          # Creates the initial changelog with env substitution
+          TAG_MESSAGE=$(git tag -l --format='%(contents)' ${{ env.refName }})
+          
           cat <<EOF > "$CHANGELOG_FILE"
           ${c_changeLog}
           EOF
           
-          # The single quote on EOF does not eval contents
+          echo "" >> "$CHANGELOG_FILE"
+          echo "### Release Notes" >> "$CHANGELOG_FILE"
+          echo "$TAG_MESSAGE" >> "$CHANGELOG_FILE"
+          echo "" >> "$CHANGELOG_FILE"
+          
           cat <<'EOF' >> "$CHANGELOG_FILE"
           ${{ steps.build_changelog.outputs.changelog }}
           EOF
-          
-          echo ":: Final Changelog Contents"
-          cat ${CHANGELOG_FILE}
       ## ------------------------------------------------ ##
-      ## see: https://github.com/marketplace/actions/wow-packager
       - uses: BigWigsMods/packager@v2
         with:
           args: -r ${releaseDir} ${bigWigsUploads} ${packagerOptions}
-      ## ------------------------------------------------ ##
-      - name: "Debug: List Release Directory contents"
-        run: ls -l ${releaseDir}
       ## ------------------------------------------------ ##
       - name: "Verify Build Artifact Exists: ${{ env.buildArtifact }}"
         uses: andstor/file-existence-action@v3
@@ -152,39 +122,11 @@ jobs:
           files: "${{ env.buildArtifact }}"
           fail: true
       ## ------------------------------------------------ ##
-      - name: "Verify: Supporting Scripts Exists"
-        uses: andstor/file-existence-action@v3
-        with:
-          files: "${{ env.sha256Script }}"
-          fail: true
-      ## ------------------------------------------------ ##
-      - name: "Setup Build Scripts"
-        run: |
-          chmod a+x $sha256Script
-      ## ------------------------------------------------ ##
-      ## Show Directory contents
-      - name: "Setup Build Scripts"
-        run: |
-          echo "------------------------------------"
-          echo Current working directory is: "$(pwd)"
-          echo "------------------------------------"
-          echo "Project Files:"
-          echo "$(ls -l)"
-          echo "dev:"
-          echo "$(ls -l dev/*)"
-      ## ------------------------------------------------ ##
       - name: Check Vars
         run: |
-          echo buildArtifactChecksum="$($sha256Script $buildArtifact)" >> $GITHUB_ENV
+          echo "buildArtifactChecksum=$(sha256sum $buildArtifact | cut -d' ' -f1)" >> $GITHUB_ENV
           echo "buildArtifact is $buildArtifact"
-          echo "buildArtifactChecksum is $buildArtifactChecksum"
       ## ------------------------------------------------ ##
-      - name: Notices
-        run: |
-          echo ::notice::Uploads CurseForge=${uploadCurseForge}, BigWigs-UploadOptions=${bigWigsUploads}
-          echo ::notice::Build Artifact=${buildArtifactFilename}, SHA256=${buildArtifactChecksum}
-      ## ------------------------------------------------ ##
-      ## https://github.com/actions/upload-artifact
       - name: Upload Build Artifact File
         if: ${{ env.uploadBuildArtifacts == 'true' }}
         uses: actions/upload-artifact@v4
@@ -192,7 +134,6 @@ jobs:
           name: ${{ env.buildArtifactFilename }}
           path: ${{ env.buildArtifact }}
           retention-days: ${{ env.artifact_retentionDays }}
-
       ## ------------------------------------------------ ##
       - name: Append SHA to Changelog
         if: ${{ env.createDraftRelease != 'false' }}
@@ -202,9 +143,8 @@ jobs:
           echo "\`\`\`text" >> CHANGELOG.txt
           echo "sha256:${{ env.buildArtifactChecksum }}" >> CHANGELOG.txt
           echo "\`\`\`" >> CHANGELOG.txt
-
       ## ------------------------------------------------ ##
-      - name: Publish Draft Release
+      - name: Publish Release
         if: ${{ env.createDraftRelease != 'false' }}
         uses: softprops/action-gh-release@v2
         env:
@@ -213,7 +153,6 @@ jobs:
           name: ${{ env.refName }}
           tag_name: ${{ env.refName }}
           body_path: CHANGELOG.txt
-          draft: true
+          draft: false
           prerelease: false
           files: ${{ env.buildArtifact }}
-          
