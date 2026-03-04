@@ -45,7 +45,6 @@ jobs:
       # write permission is required for autolabeler
       pull-requests: write
     steps:
-      ## ------------------------------------------------ ##
       ## See: https://github.com/actions/github-script
       - name: "Set Env Variable: GITHUB_SHA_SHORT"
         uses: actions/github-script@v7
