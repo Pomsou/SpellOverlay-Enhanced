@@ -36,7 +36,6 @@ local RIGHT_PROCS = {
 }
 
 local SUPPRESSED_BY = {
-    -- If the KEY spell ID is active, hide it if ANY of the VALUE spell IDs are active
     [270436] = { 270437 }, -- Precise Shots 1 hides if Precise Shots 2 is active
     [1277420] = { 1277421 },
     [1277421] = { 1277422 },
@@ -166,13 +165,13 @@ end
 
 -- VISUAL FINGERPRINTING: Detect Stage based on Texture Crop Height
 function SOE:DetectMaelstromStage(texture)
-    -- If Max Stacks, trust the aura count
+
     if SOE:GetMaelstromStackCount() >= 10 then 
         return "Maelstrom Weapon (Max 10)" 
     end
 
     if not texture then 
-        -- If no texture (lag), guess based on stack count
+
         local s = SOE:GetMaelstromStackCount()
         if s > 0 and s < 5 then return "Maelstrom Weapon (Stage 1-4)" end
         return "Maelstrom Weapon (Stage 5-9)" 
@@ -183,7 +182,7 @@ function SOE:DetectMaelstromStage(texture)
     local height = lly - uly
     
     -- "Full" textures usually span 0.0 to 1.0 (height ~1.0)
-    -- "Cropped" progressive textures are much shorter
+
     if height < 0.90 then 
         return "Maelstrom Weapon (Stage 1-4)" 
     end
@@ -195,8 +194,6 @@ function SOE:GetGroupKey(spellID, texture)
     local specID = GetSpecializationInfo(GetSpecialization())
     local baseName = nil
 
-    -- [FIX] Check for Maelstrom 1-4 Texture IDs directly
-    -- We do this FIRST to override any other logic
     if texture and texture.GetTexture then
         local texID = texture:GetTexture()
         if texID == 1028136 or texID == 1028137 or texID == 1028138 or texID == 1028139 then
@@ -387,8 +384,7 @@ function SOE:ApplyToOverlay(overlay)
     local glow = overlay.SOE_Glow
 
     -- [3] POSITIONAL LOGIC & BASE SIZE
-    
-    -- Cache original coordinates to prevent infinite mirroring loops
+
     -- Added a check for overlay.position so recycled frames don't keep hiding or overlapping
     if not overlay.SOE_BaseCoords or overlay.SOE_LastSpellBase ~= overlay.spellID or overlay.SOE_LastPos ~= overlay.position then
         overlay.SOE_BaseCoords = { mainTexture:GetTexCoord() }
@@ -583,7 +579,10 @@ function SOE:SnapshotOverlay(overlay)
     if overlay.texture then
          ulx, uly, llx, lly, urx, ury, lrx, lry = overlay.texture:GetTexCoord()
     end
-    local isRight = (ulx and ulx > 0.4)
+    
+    -- FIXED: Rely on Blizzard's position tag first, fallback to math if missing
+    local posStr = overlay.position and string.lower(overlay.position) or ""
+    local isRight = string.find(posStr, "right") or (ulx and ulx > 0.4)
     local slot = isRight and "right" or "left"
     
     local exists = self.db.global.snapshots[group][slot]
@@ -650,7 +649,9 @@ function SOE:PreviewSelected()
         f.texture:SetAtlas(nil)
         f.texture:SetTexCoord(0, 1, 0, 1)
 
-        -- [FIX] Properly assign base size parameters to dummy frames
+        -- FIXED: Explicitly tell ApplyToOverlay which dummy this is so Right-side config options apply
+        f.position = (index == 2) and "Right" or "Left"
+
         if selectedGroupName == "Maelstrom Weapon (Stage 1-4)" then
              f.SOE_UseTexture = 1028139
              
