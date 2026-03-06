@@ -12,7 +12,7 @@ SOE.LastMaelstromStack = 0
 -- 1. DATA & CONSTANTS
 -----------------------------------------------------------------------
 local DUAL_PROCS = {
-    ["Hot Streak"] = true, ["Heating Up"] = true, ["Hyperthermia"] = true, ["Fingers of Frost"] = true, ["Clearcasting"] = true, ["Clearcasting (2nd proc)"] = true, ["Clearcasting (3rd proc)"] = true,
+    ["Hot Streak"] = true, ["Heating Up"] = true, ["Hyperthermia"] = true, ["Fingers of Frost"] = true, ["Clearcasting"] = true, ["Clearcasting (2nd proc)"] = true, ["Clearcasting (3rd proc)"] = true, ["Overpowered Missiles"] = true,
     ["Essence Burst"] = true, ["Killing Machine"] = true, ["Sudden Doom"] = true, ["Crimson Scourge"] = true,
     ["Lava Surge"] = true, ["High Tide"] = true, ["Nightfall"] = true, 
     ["Demonic Core"] = true, ["Surge of Light"] = true, ["Power of the Dark Side"] = true, ["Dark Thoughts"] = true,
@@ -26,13 +26,14 @@ local DUAL_PROCS = {
 local LEFT_PROCS = {
     ["Lunar Eclipse"] = true, ["Galactic Guardian"] = true,
     ["Shield Slam"] = true,
-    ["Strenght of the Black Ox"] = true,
+    ["Strength of the Black Ox"] = true,
 }
 
 local RIGHT_PROCS = {
     ["Solar Eclipse"] = true,
     ["Riposte"] = true,
     ["Blackout Kick!"] = true,
+    ["Zen Pulse"] = true,
 }
 
 local SUPPRESSED_BY = {
@@ -47,7 +48,7 @@ local SPELL_GROUPS = {
     [1473] = { ["Essence Burst"] = { 359618, 369297, 369299 } }, 
     [63] = { ["Hot Streak"] = { 48108 }, ["Heating Up"] = { 48107 }, ["Pyroclasm"] = { 269651 }, ["Hyperthermia"] = { 449619 } },
     [64] = { ["Brain Freeze"] = { 190446 }, ["Fingers of Frost"] = { 44544 } },
-    [62] = { ["Clearcasting"] = { 1277420 }, ["Clearcasting (2nd proc)"] = { 1277421 }, ["Clearcasting (3rd proc)"] = { 1277422 } },
+    [62] = { ["Clearcasting"] = { 1277420 }, ["Clearcasting (2nd proc)"] = { 1277421 }, ["Clearcasting (3rd proc)"] = { 1277422 }, ["Overpowered Missiles"] = { 1277009 }, ["Arcane Soul"] = { 451038 } },
     [102] = { ["Lunar Eclipse"] = { 93431 }, ["Solar Eclipse"] = { 93430 } },
     [103] = { ["Clearcasting"] = { 135700 } },
     [104] = { ["Galactic Guardian"] = { 213708 }, ["Gore"] = { 93622 } },
@@ -73,9 +74,9 @@ local SPELL_GROUPS = {
     [264] = { ["High Tide"] = { 157153 } },
     [266] = { ["Demonic Core"] = { 264173 } },
     [265] = { ["Nightfall"] = { 108558 } },
-    [594] = { ["Moment of Craving"] = { 1238488 },["Voidfall"] = { 1253304 } }, 
-    [269] = { ["Blackout Kick!"] = { 116768, 439045 }, ["Strenght of the Black Ox"] = { 443112 } },
-    [270] = { ["Strenght of the Black Ox"] = { 443112 } },
+    [1480] = { ["Moment of Craving"] = { 1238488 },["Voidfall"] = { 1253304 } }, 
+    [269] = { ["Blackout Kick!"] = { 116768, 439045 }, ["Strength of the Black Ox"] = { 443112 } },
+    [270] = { ["Strength of the Black Ox"] = { 443112 }, ["Zen Pulse"] = { 446334 }, ["Harmonic Surge"] = { 1270990 } },
     [268] = { ["Blackout Kick!"] = { 116768, 439045 }, ["Light Stagger"] = { 124275 }, ["Moderate Stagger"] = { 124274 }, ["Heavy Stagger"] = { 124273 } },
 }
 
