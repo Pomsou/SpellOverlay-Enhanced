@@ -81,6 +81,7 @@ local SPELL_GROUPS = {
 }
 
 local ID_TO_GROUP_MAP = {}
+local LOCALIZED_TO_GROUP_MAP = {}
 
 local defaults = {
     global = {
@@ -143,11 +144,18 @@ end
 
 function SOE:BuildLookupMap()
     ID_TO_GROUP_MAP = {}
+    LOCALIZED_TO_GROUP_MAP = {}
     for specID, groups in pairs(SPELL_GROUPS) do
         ID_TO_GROUP_MAP[specID] = {}
         for groupName, ids in pairs(groups) do
             for _, spellID in ipairs(ids) do
                 ID_TO_GROUP_MAP[specID][spellID] = groupName
+                
+                -- Building internal translate and map to English
+                local info = C_Spell.GetSpellInfo(spellID)
+                if info and info.name then
+                    LOCALIZED_TO_GROUP_MAP[info.name] = groupName
+                end
             end
         end
     end
@@ -206,7 +214,14 @@ function SOE:GetGroupKey(spellID, texture)
         baseName = ID_TO_GROUP_MAP[specID][spellID] 
     else
         local info = C_Spell.GetSpellInfo(spellID)
-        if info and info.name then baseName = info.name end
+        if info and info.name then 
+            -- Translate names back to English Config
+            if LOCALIZED_TO_GROUP_MAP[info.name] then
+                baseName = LOCALIZED_TO_GROUP_MAP[info.name]
+            else
+                baseName = info.name 
+            end
+        end
     end
     
     if not baseName then return spellID end
@@ -753,10 +768,20 @@ function SOE:GetOptions()
                 local firstID = ids[1]
                 local info = C_Spell.GetSpellInfo(firstID)
                 local icon = info and info.iconID
-                if not icon then info = C_Spell.GetSpellInfo(groupName); icon = info and info.iconID end
+                
+                -- Names displayed in dropdown
+                local displayName = groupName
+                if info and info.name then
+                    displayName = info.name
+                    -- Keeping custom mods like "(2nd proc) into the name"
+                    local modifier = string.match(groupName, "%s*(%(.+%))")
+                    if modifier and not string.find(displayName, "%(") then
+                        displayName = displayName .. " " .. modifier
+                    end
+                end
                 
                 if groupName ~= "Maelstrom Weapon" then
-                    list[groupName] = icon and ("|T"..icon..":14:14:0:0|t " .. groupName) or groupName
+                    list[groupName] = icon and ("|T"..icon..":14:14:0:0|t " .. displayName) or displayName
                 end
             end
         end
@@ -767,9 +792,13 @@ function SOE:GetOptions()
              local icon = info and info.iconID
              local p = icon and "|T"..icon..":14:14:0:0|t " or ""
              
-             list["Maelstrom Weapon (Stage 1-4)"] = p .. "Maelstrom Weapon (Stage 1-4)"
-             list["Maelstrom Weapon (Stage 5-9)"] = p .. "Maelstrom Weapon (Stage 5-9)"
-             list["Maelstrom Weapon (Max 10)"] = p .. "Maelstrom Weapon (Max 10)"
+             -- Localized name for Maelstrom Weapon, fallback to English if nil
+             local localBase = (info and info.name) and info.name or "Maelstrom Weapon"
+             
+             -- Applying the custom modifiers to the dropdown
+             list["Maelstrom Weapon (Stage 1-4)"] = p .. localBase .. " (Stage 1-4)"
+             list["Maelstrom Weapon (Stage 5-9)"] = p .. localBase .. " (Stage 5-9)"
+             list["Maelstrom Weapon (Max 10)"] = p .. localBase .. " (Max 10)"
         end
 
         local specDB = SOE.db.profile.specs[selectedSpecID]
