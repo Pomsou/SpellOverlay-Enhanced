@@ -1,0 +1,33 @@
+name: Feature Request description: Suggest an idea, UI improvement, or new capability for 
+the addon. title: "[Feature]: " labels: ["enhancement"] body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a new feature! Please provide as much detail 
+as possible so I can understand exactly how this improves the addon.
+  - type: textarea
+    id: feature_description attributes:
+      label: Describe the Feature description: A clear and concise description of what you 
+      want to happen. placeholder: "I would love it if the addon could..."
+    validations:
+      required: true
+  - type: textarea
+    id: problem_context attributes:
+      label: Is your feature request related to a problem? description: Sometimes the best 
+      features is to solve something annoying. (e.g., "I'm always frustrated when..." or "During a 
+      Midnight raid, it's hard to track...") placeholder: "When I am in combat, I 
+      cannot..."
+    validations:
+      required: false
+  - type: checkboxes
+    id: gameplay_context attributes:
+      label: Gameplay Context description: Where would this feature be most useful? (Check 
+      all that apply) options:
+        - Raiding / Mythic+ (PvE) - Arena / Battlegrounds (PvP) - General UI / Leveling - 
+        Addon Configuration Panel
+  - type: textarea
+    id: alternatives attributes:
+      label: Alternatives Considered description: Have you tried any workarounds or other 
+      addons to solve this?
+    validations:
+      required: false
