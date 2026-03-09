@@ -1,0 +1,37 @@
+name: Bug Report description: Report an issue, visual glitch, or Lua error with the addon. 
+title: "[Bug]: " labels: ["Bug"] body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug! Please fill out the required fields 
+below so I can fix this as quickly as possible.
+  - type: input
+    id: addon_version attributes:
+      label: Addon Version description: Which release version of the addon are you 
+      currently using? (e.g., 2026.3.6) placeholder: "2026.3.6"
+    validations:
+      required: true
+  - type: input
+    id: wow_version attributes:
+      label: WoW Client Version description: Which version/expansion of WoW are you 
+      playing? placeholder: "e.g., 12.0.0 Midnight"
+    validations:
+      required: true
+  - type: textarea
+    id: description attributes:
+      label: Describe the Bug description: What is happening? What did you expect to happen 
+      instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps attributes:
+      label: Steps to Reproduce description: How can I trigger this bug in-game? (e.g., 
+      "Cast a spell that triggers a double proc")
+    validations:
+      required: true
+  - type: textarea
+    id: lua_error attributes:
+      label: Lua Error / BugSack Output description: If you are getting a Lua error on your 
+      screen, copy and paste the full text here. render: lua
+    validations:
+      required: false
