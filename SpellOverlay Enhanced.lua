@@ -38,7 +38,7 @@ local RIGHT_PROCS = {
 
 local SUPPRESSED_BY = {
     [270436] = { 270437 }, -- Precise Shots 1 hides if Precise Shots 2 is active
-    [1277420] = { 1277421 },
+    [1277420] = { 1277421 }, -- Clearcasting replacing with 1 or 2 procs
     [1277421] = { 1277422 },
 }
 
@@ -253,8 +253,28 @@ function SOE:ResolveDefaultsFor(groupName)
     }
     if not groupName then return d end
     
-    -- [1] Hardcoded Categories take priority
-    if DUAL_PROCS[groupName] then 
+    -- MAGE: Fire Overlaps
+    if groupName == "Heating Up" then
+        d.x = -120; d.y = 0; d.x2 = 120; d.y2 = 0 
+    elseif groupName == "Hot Streak" then
+        d.x = -150; d.y = 0; d.x2 = 150; d.y2 = 0 
+    elseif groupName == "Hyperthermia" then
+        d.x = -180; d.y = 0; d.x2 = 180; d.y2 = 0 
+        
+    -- PRIEST: Discipline Overlaps
+    elseif groupName == "Power of the Dark Side" then
+        d.x = -120; d.y = 0; d.x2 = 120; d.y2 = 0
+    elseif groupName == "Surge of Light" then
+        d.x = -150; d.y = 0; d.x2 = 150; d.y2 = 0
+        
+    -- MONK: Brewmaster Overlaps (with Stagger)
+    elseif groupName == "Strenght of the Black Ox" then
+        d.x = -180; d.y = 0
+    elseif groupName == "Blackout Kick!" then
+        d.x = 180; d.y = 0
+
+    -- DEFAULT FALLBACKS
+    elseif DUAL_PROCS[groupName] then 
         d.x = -150; d.y = 0; d.x2 = 150; d.y2 = 0 
     elseif LEFT_PROCS[groupName] then
         d.x = -150; d.y = 0
