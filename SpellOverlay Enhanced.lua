@@ -46,7 +46,7 @@ local SPELL_GROUPS = {
     [1467] = { ["Essence Burst"] = { 359618, 369297, 369299 } }, 
     [1468] = { ["Essence Burst"] = { 359618, 369297, 369299 }, ["Lifespark"] = { 370960 } }, 
     [1473] = { ["Essence Burst"] = { 359618, 369297, 369299 } }, 
-    [63] = { ["Hot Streak"] = { 48108 }, ["Heating Up"] = { 48107 }, ["Pyroclasm"] = { 269651 }, ["Hyperthermia"] = { 449619 } },
+    [63] = { ["Hot Streak"] = { 48108 }, ["Heating Up"] = { 48107 }, ["Pyroclasm"] = { 269651 }, ["Hyperthermia"] = { 449619, 383874 } },
     [64] = { ["Brain Freeze"] = { 190446 }, ["Fingers of Frost"] = { 44544 } },
     [62] = { ["Clearcasting"] = { 1277420 }, ["Clearcasting (2nd proc)"] = { 1277421 }, ["Clearcasting (3rd proc)"] = { 1277422 }, ["Overpowered Missiles"] = { 1277009 }, ["Arcane Soul"] = { 451038 } },
     [102] = { ["Lunar Eclipse"] = { 93431 }, ["Solar Eclipse"] = { 93430 } },
@@ -463,6 +463,12 @@ function SOE:ApplyToOverlay(overlay)
 
     if targetWidth > 0 then mainW = targetWidth end
     if targetHeight > 0 then mainH = targetHeight end
+    
+    -- exclusive to change default size of the proc
+    if groupName == "Heating Up" then
+        if targetWidth <= 0 then mainW = baseW * 0.5 end
+        if targetHeight <= 0 then mainH = baseH * 0.5 end
+    end
 
     -- [4] CALCULATE VISUALS & PULSE
     local pulseFactor = 1.0
