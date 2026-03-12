@@ -49,7 +49,7 @@ local SPELL_GROUPS = {
     [63] = { ["Hot Streak"] = { 48108 }, ["Heating Up"] = { 48107 }, ["Pyroclasm"] = { 269651 }, ["Hyperthermia"] = { 449619, 383874 } },
     [64] = { ["Brain Freeze"] = { 190446 }, ["Fingers of Frost"] = { 44544 } },
     [62] = { ["Clearcasting"] = { 1277420 }, ["Clearcasting (2nd proc)"] = { 1277421 }, ["Clearcasting (3rd proc)"] = { 1277422 }, ["Overpowered Missiles"] = { 1277009 }, ["Arcane Soul"] = { 451038 } },
-    [102] = { ["Lunar Eclipse"] = { 93431 }, ["Solar Eclipse"] = { 93430 } },
+    [102] = { ["Lunar Eclipse"] = { 93431 }, ["Solar Eclipse"] = { 93430 }, ["Owlkin Frenzy"] = { 157228 } },
     [103] = { ["Clearcasting"] = { 135700 } },
     [104] = { ["Galactic Guardian"] = { 213708 }, ["Gore"] = { 93622 } },
     [105] = { ["Clearcasting"] = { 16870 } },
