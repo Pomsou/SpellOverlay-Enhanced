@@ -350,6 +350,13 @@ function SOE:EnsureHelperExists(overlay)
     end
 end
 
+-- Move offscreen to bypass fade-in animations overriding alpha.
+function SOE:HideOverlay(overlay)
+    overlay:ClearAllPoints()
+    overlay:SetPoint("BOTTOMRIGHT", UIParent, "TOPLEFT", -10000, 10000)
+    if overlay.SOE_Glow then overlay.SOE_Glow:Hide() end
+end
+
 function SOE:ApplyToOverlay(overlay)
     if not overlay:IsShown() then 
         if overlay.SOE_Glow then overlay.SOE_Glow:Hide() end
@@ -380,8 +387,7 @@ function SOE:ApplyToOverlay(overlay)
             end
             
             if isSuppressed then
-                mainTexture:SetAlpha(0)
-                if overlay.SOE_Glow then overlay.SOE_Glow:Hide() end
+                SOE:HideOverlay(overlay)
                 return
             end
         end
@@ -489,6 +495,11 @@ function SOE:ApplyToOverlay(overlay)
 
     local baseAlpha = (isRightSide and isDualProc) and (settings.alpha2 or 1.0) or (settings.alpha or 1.0)
     local finalAlpha = baseAlpha * pulseFactor
+
+    if finalAlpha <= 0 then
+        SOE:HideOverlay(overlay)
+        return
+    end
 
     -- [5] APPLY SCALE & POSITION
     local scale = settings.scale or 1.0
