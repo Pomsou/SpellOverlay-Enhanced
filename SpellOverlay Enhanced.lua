@@ -200,7 +200,8 @@ function SOE:DetectMaelstromStage(texture)
 end
 
 function SOE:GetGroupKey(spellID, texture)
-    local specID = GetSpecializationInfo(GetSpecialization())
+    local specIndex = GetSpecialization()
+    local specID = specIndex and GetSpecializationInfo(specIndex) or nil
     local baseName = nil
 
     if texture and texture.GetTexture then
@@ -210,7 +211,7 @@ function SOE:GetGroupKey(spellID, texture)
         end
     end
 
-    if ID_TO_GROUP_MAP[specID] and ID_TO_GROUP_MAP[specID][spellID] then
+    if specID and ID_TO_GROUP_MAP[specID] and ID_TO_GROUP_MAP[specID][spellID] then
         baseName = ID_TO_GROUP_MAP[specID][spellID] 
     else
         local info = C_Spell.GetSpellInfo(spellID)
@@ -308,8 +309,10 @@ function SOE:ResolveDefaultsFor(groupName)
 end
 
 function SOE:GetSettingsForActiveOverlay(spellID, overrideGroup, texture)
-    local specID = GetSpecializationInfo(GetSpecialization())
-    if not self.db.profile.specs then return nil end
+    local specIndex = GetSpecialization()
+    local specID = specIndex and GetSpecializationInfo(specIndex) or nil
+    if not specID or not self.db.profile.specs then return nil end
+
     local specDB = self.db.profile.specs[specID]
     if not specDB then return nil end
 
@@ -407,8 +410,14 @@ function SOE:ApplyToOverlay(overlay)
     
     -- Auto-Snapshot (Live Only)
     if not forcedGroup and not overlay.IsDummy and currentGroup then
-        if not self.db.global.snapshots[currentGroup] or 
-           (not self.db.global.snapshots[currentGroup]["left"] and not self.db.global.snapshots[currentGroup]["right"]) then
+        local snap = self.db.global.snapshots[currentGroup]
+        local ulx = 0
+        if mainTexture then ulx = mainTexture:GetTexCoord() end
+        local posStr = overlay.position and string.lower(overlay.position) or ""
+        local isRight = string.find(posStr, "right") or (ulx and ulx > 0.4)
+        local currentSide = isRight and "right" or "left"
+        
+        if not snap or not snap[currentSide] then
              SOE:SnapshotOverlay(overlay)
         end
     end
@@ -603,6 +612,7 @@ function SOE:SnapshotOverlay(overlay)
         texPath = overlay.texture and overlay.texture:GetTexture()
     end
 
+    if not texPath then texPath = overlay.SOE_RealTexture end
     if not texPath then return end
     
     local group = SOE:GetGroupKey(overlay.spellID, overlay.texture)
@@ -610,9 +620,10 @@ function SOE:SnapshotOverlay(overlay)
     
     if not self.db.global.snapshots[group] then self.db.global.snapshots[group] = {} end
     
-    -- [FIX] Prevent corrupted snapshot dimensions
+    -- FIXED: Prevent corrupted snapshot dimensions
     local w = overlay.SOE_OrigW or 256
     local h = overlay.SOE_OrigH or 256
+    if w <= 0 or h <= 0 then return end -- reject 0x0 invisible frames
     if w > 1024 then w = 256 end
     if h > 1024 then h = 256 end
 
