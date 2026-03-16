@@ -1064,10 +1064,46 @@ function SOE:OnInitialize()
 
     self:RegisterChatCommand("soe", "ChatCommand")
 
+    -- [1] Register the FULL options table strictly for the standalone /soe
     LibStub("AceConfig-3.0"):RegisterOptionsTable(addonName, self:GetOptions())
-    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, "Spell Overlay")
     LibStub("AceConfigDialog-3.0"):SetDefaultSize(addonName, 520, 750)
     
+    -- [2] Create a button on Blizzard menus
+    local blizzOptions = {
+        type = "group",
+        name = "|cff33ff99SpellOverlay Enhanced|r",
+        args = {
+            desc = {
+                order = 1,
+                type = "description",
+                name = "The configuration for SpellOverlay Enhanced is housed in a standalone window to provide more space for the Preview Spells.\n\nType |cff33ff99/soe|r in chat, or click the button below to open it.\n\n",
+                fontSize = "medium",
+            },
+            open = {
+                order = 2,
+                type = "execute",
+                name = "Open Configuration",
+                width = "double",
+                func = function()
+                    -- Automatically close the massive Blizzard Settings panel
+                    if SettingsPanel then 
+                        SettingsPanel:Hide() 
+                    elseif InterfaceOptionsFrame then 
+                        InterfaceOptionsFrame:Hide() 
+                    end
+                    
+                    -- Open the standalone window
+                    SOE:OpenConfig()
+                end,
+            },
+        },
+    }
+
+    -- [3] Attach ONLY the Stub to the Blizzard Options
+    LibStub("AceConfig-3.0"):RegisterOptionsTable(addonName .. "_Blizz", blizzOptions)
+    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName .. "_Blizz", "Spell Overlay")
+
+    -- [4] Original Ace3 Close hook
     local ACD = LibStub("AceConfigDialog-3.0", true)
     if ACD then
         hooksecurefunc(ACD, "Close", function(lib, appName)
