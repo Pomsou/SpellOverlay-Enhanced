@@ -17,7 +17,7 @@ local DUAL_PROCS = {
     ["Lava Surge"] = true, ["High Tide"] = true, ["Nightfall"] = true, 
     ["Demonic Core"] = true, ["Surge of Light"] = true, ["Power of the Dark Side"] = true, ["Dark Thoughts"] = true,
     ["Infusion of Light"] = true,
-    ["Ancient Arts"] = true,
+    ["Ancient Arts"] = true, ["Blindside"] = true,
     ["Grand Crusader"] = true, ["Art of War"] = true,
     ["Voidfall"] = true, ["Light Stagger"] = true, ["Moderate Stagger"] = true, ["Heavy Stagger"] = true,
     ["Howl of the Pack Leader"] = true, ["Precise Shot"] = true, ["Precise Shot (2nd proc)"] = true,
@@ -35,6 +35,7 @@ local RIGHT_PROCS = {
     ["Riposte"] = true,
     ["Blackout Kick!"] = true,
     ["Zen Pulse"] = true,
+    ["Celestial Might"] = true,
 }
 
 local SUPPRESSED_BY = {
@@ -52,7 +53,7 @@ local SPELL_GROUPS = {
     [62] = { ["Clearcasting"] = { 1277420 }, ["Clearcasting (2nd proc)"] = { 1277421 }, ["Clearcasting (3rd proc)"] = { 1277422 }, ["Overpowered Missiles"] = { 1277009 }, ["Arcane Soul"] = { 451038 } },
     [102] = { ["Lunar Eclipse"] = { 93431, 48518 }, ["Solar Eclipse"] = { 93430, 48517 }, ["Owlkin Frenzy"] = { 157228 } },
     [103] = { ["Clearcasting"] = { 135700 } },
-    [104] = { ["Galactic Guardian"] = { 213708 }, ["Gore"] = { 93622 } },
+    [104] = { ["Galactic Guardian"] = { 213708 }, ["Gore"] = { 93622 }, ["Celestial Might"] = { 1272376 } },
     [105] = { ["Clearcasting"] = { 16870 } },
     [70] = { ["Divine Purpose"] = { 408458 }, ["Art of War"] = { 406086 } },
     [65] = { ["Infusion of Light"] = { 54149 }, ["Divine Purpose"] = { 223819 } },
@@ -64,6 +65,7 @@ local SPELL_GROUPS = {
     [252] = { ["Sudden Doom"] = { 81340 } },
     [250] = { ["Crimson Scourge"] = { 81141 }, ["Dance of Midnight"] = { 1264568 } },
     [260] = { ["Opportunity"] = { 195627 } },
+    [259] = { ["Blindside"] = { 121153 } },
     [261] = { ["Ancient Arts"] = { 1268932 }, { 1268936 }, { 1268939 } },
     [72] = { ["Rampage"] = { 209697 } },
     [71] = { ["Tactician"] = { 199864 } },
