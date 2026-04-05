@@ -66,7 +66,7 @@ local SPELL_GROUPS = {
     [250] = { ["Crimson Scourge"] = { 81141 }, ["Dance of Midnight"] = { 1264568 } },
     [260] = { ["Opportunity"] = { 195627 } },
     [259] = { ["Blindside"] = { 121153 } },
-    [261] = { ["Ancient Arts"] = { 1268932 }, { 1268936 }, { 1268939 } },
+    [261] = { ["Ancient Arts"] = { 1268932, 1268936, 1268939 } },
     [72] = { ["Rampage"] = { 209697 } },
     [71] = { ["Tactician"] = { 199864 } },
     [73] = { ["Shield Slam"] = { 224324 }, ["Riposte"] = { 5302 } },
