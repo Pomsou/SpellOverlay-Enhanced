@@ -72,17 +72,17 @@ local SPELL_GROUPS = {
     [73] = { ["Shield Slam"] = { 224324 }, ["Riposte"] = { 5302 } },
     [258] = { ["Shadowy Insight"] = { 375981 } },
     [256] = { ["Power of the Dark Side"] = { 198069 }, ["Surge of Light"] = { 114255, 128654 } },
-    [257] = { ["Surge of Light"] = { 114255 } },
-    [262] = { ["Lava Surge"] = { 77762 } },
+    [257] = { ["Surge of Light"] = { 114255 }, ["Benediction"] = { 1262755 } },
+    [262] = { ["Lava Surge"] = { 77762, 77756 } },
     [263] = { ["Maelstrom Weapon"] = { 344179 } },
-    [264] = { ["High Tide"] = { 157153 } },
+    [264] = { ["High Tide"] = { 157153 }, ["Lava Surge"] = { 77762, 77756 } },
     [266] = { ["Demonic Core"] = { 264173 } },
     [265] = { ["Nightfall"] = { 108558 } },
     [1480] = { ["Moment of Craving"] = { 1238488 },["Voidfall"] = { 1253304 } },
     [581] = { ["Voidfall"] = { 1253304, 1256302 }, ["Untethered Rage"] = { 1270476 } }, 
     [269] = { ["Blackout Kick!"] = { 116768, 439045 }, ["Strength of the Black Ox"] = { 443112 } },
     [270] = { ["Strength of the Black Ox"] = { 443112 }, ["Zen Pulse"] = { 446334 }, ["Harmonic Surge"] = { 1270990 } },
-    [268] = { ["Blackout Kick!"] = { 116768, 439045 }, ["Light Stagger"] = { 124275 }, ["Moderate Stagger"] = { 124274 }, ["Heavy Stagger"] = { 124273 } },
+    [268] = { ["Blackout Kick!"] = { 116768, 439045 }, ["Light Stagger"] = { 124275 }, ["Moderate Stagger"] = { 124274 }, ["Heavy Stagger"] = { 124273 }, ["Harmonic Surge"] = { 1270990 } },
 }
 
 local ID_TO_GROUP_MAP = {}
