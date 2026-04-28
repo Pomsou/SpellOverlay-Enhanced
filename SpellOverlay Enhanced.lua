@@ -15,7 +15,7 @@ local DUAL_PROCS = {
     ["Hot Streak"] = true, ["Heating Up"] = true, ["Hyperthermia"] = true, ["Fingers of Frost"] = true, ["Clearcasting"] = true, ["Clearcasting (2nd proc)"] = true, ["Clearcasting (3rd proc)"] = true, ["Overpowered Missiles"] = true,
     ["Essence Burst"] = true, ["Killing Machine"] = true, ["Sudden Doom"] = true, ["Crimson Scourge"] = true,
     ["Lava Surge"] = true, ["High Tide"] = true, ["Nightfall"] = true, 
-    ["Demonic Core"] = true, ["Surge of Light"] = true, ["Power of the Dark Side"] = true, ["Dark Thoughts"] = true,
+    ["Demonic Core"] = true, ["Demonic Core (3-4)"] = true, ["Surge of Light"] = true, ["Power of the Dark Side"] = true, ["Dark Thoughts"] = true, ["Mind Flay: Insanity"] = true, ["Mind Flay: Insanity (3-4)"] = true,
     ["Infusion of Light"] = true,
     ["Ancient Arts"] = true, ["Blindside"] = true,
     ["Grand Crusader"] = true, ["Art of War"] = true,
@@ -70,13 +70,13 @@ local SPELL_GROUPS = {
     [72] = { ["Rampage"] = { 209697 } },
     [71] = { ["Tactician"] = { 199864 } },
     [73] = { ["Shield Slam"] = { 224324 }, ["Riposte"] = { 5302 } },
-    [258] = { ["Shadowy Insight"] = { 375981 } },
+    [258] = { ["Shadowy Insight"] = { 375981 }, ["Mind Flay: Insanity"] = { 391401 }, ["Mind Flay: Insanity (3-4)"] = { 999391 } },
     [256] = { ["Power of the Dark Side"] = { 198069 }, ["Surge of Light"] = { 114255, 128654 } },
     [257] = { ["Surge of Light"] = { 114255 }, ["Benediction"] = { 1262755 } },
     [262] = { ["Lava Surge"] = { 77762, 77756 } },
     [263] = { ["Maelstrom Weapon"] = { 344179 } },
     [264] = { ["High Tide"] = { 157153 }, ["Lava Surge"] = { 77762, 77756 } },
-    [266] = { ["Demonic Core"] = { 264173 } },
+    [266] = { ["Demonic Core"] = { 264173 }, ["Demonic Core (3-4)"] = { 999264 } },
     [265] = { ["Nightfall"] = { 108558 } },
     [1480] = { ["Moment of Craving"] = { 1238488 },["Voidfall"] = { 1253304 } },
     [581] = { ["Voidfall"] = { 1253304, 1256302 }, ["Untethered Rage"] = { 1270476 } }, 
@@ -279,6 +279,10 @@ function SOE:ResolveDefaultsFor(groupName)
     elseif groupName == "Blackout Kick!" then
         d.x = 180; d.y = 0
 
+    -- WARLOCK & PRIEST: 3rd and 4th Stack Width Overrides
+    elseif groupName == "Demonic Core (3-4)" or groupName == "Mind Flay: Insanity (3-4)" then
+        d.x = -175; d.y = 0; d.x2 = 175; d.y2 = 0
+
     -- DEFAULT FALLBACKS
     elseif DUAL_PROCS[groupName] then 
         d.x = -150; d.y = 0; d.x2 = 150; d.y2 = 0 
@@ -402,16 +406,20 @@ function SOE:ApplyToOverlay(overlay)
     if overlay.IsDummy then
         if overlay.SOE_UseAtlas then
             overlay.texture:SetAtlas(overlay.SOE_UseAtlas)
+            if overlay.SOE_TexCoords then
+                local c = overlay.SOE_TexCoords
+                overlay.texture:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
+            end
         elseif overlay.SOE_UseTexture then
             overlay.texture:SetTexture(overlay.SOE_UseTexture)
+            if overlay.SOE_TexCoords then
+                local c = overlay.SOE_TexCoords
+                overlay.texture:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
+            else
+                overlay.texture:SetTexCoord(0, 1, 0, 1)
+            end
         elseif overlay.SOE_UseIcon then
             overlay.texture:SetTexture(overlay.SOE_UseIcon)
-        end
-        
-        if overlay.SOE_TexCoords then
-            local c = overlay.SOE_TexCoords
-            overlay.texture:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
-        else
             overlay.texture:SetTexCoord(0, 1, 0, 1)
         end
     end
@@ -440,10 +448,12 @@ function SOE:ApplyToOverlay(overlay)
     local glow = overlay.SOE_Glow
 
     -- [3] POSITIONAL LOGIC & BASE SIZE
-
-    -- Added a check for overlay.position so recycled frames don't keep hiding or overlapping
     if not overlay.SOE_BaseCoords or overlay.SOE_LastSpellBase ~= overlay.spellID or overlay.SOE_LastPos ~= overlay.position then
-        overlay.SOE_BaseCoords = { mainTexture:GetTexCoord() }
+        if overlay.SOE_TexCoords then
+            overlay.SOE_BaseCoords = overlay.SOE_TexCoords
+        else
+            overlay.SOE_BaseCoords = { mainTexture:GetTexCoord() }
+        end
         overlay.SOE_LastSpellBase = overlay.spellID
         overlay.SOE_LastPos = overlay.position
     end
@@ -501,6 +511,16 @@ function SOE:ApplyToOverlay(overlay)
     local baseAlpha = (isRightSide and isDualProc) and (settings.alpha2 or 1.0) or (settings.alpha or 1.0)
     local finalAlpha = baseAlpha * pulseFactor
 
+    -- [NEW] Hide Right side if only 1 stack for specific multi-stack on Priest/Warlock procs
+    if overlay.spellID == 264173 or overlay.spellID == 391401 then
+        local aura = C_UnitAuras.GetPlayerAuraBySpellID(overlay.spellID)
+        local stacks = aura and aura.applications or 0
+        
+        if stacks == 1 and isRightSide then
+            finalAlpha = 0
+        end
+    end
+
     if finalAlpha <= 0 then
         SOE:HideOverlay(overlay)
         return
@@ -523,7 +543,6 @@ function SOE:ApplyToOverlay(overlay)
     -- Rotation
     mainTexture:SetRotation(math.rad(targetRotation))
     
-    -- Mirroring (Swaps the Left X and Right X texture coordinates)
     if targetMirror then
         mainTexture:SetTexCoord(c[5], c[6], c[7], c[8], c[1], c[2], c[3], c[4])
     else
@@ -555,12 +574,12 @@ function SOE:ApplyToOverlay(overlay)
         end
         glow:SetBlendMode(settings.borderBlendMode or "ADD")
         
-        -- Sync Glow Symmetry
+        -- Sync Glow Symmetry (Protecting Atlases here too)
         glow:SetRotation(math.rad(targetRotation))
         if targetMirror then
-            glow:SetTexCoord(c[5], c[6], c[7], c[8], c[1], c[2], c[3], c[4])
+                glow:SetTexCoord(c[5], c[6], c[7], c[8], c[1], c[2], c[3], c[4])
         else
-            glow:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
+                glow:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
         end
         
         local bScale = settings.borderScale or 1.05
@@ -612,6 +631,62 @@ function SOE:OnFrameUpdate(elapsed)
             end
         end
     end
+
+    if SOE.VirtualFrames then
+        for _, vFrame in ipairs(SOE.VirtualFrames) do
+            -- The Brute-Force Scanner (Now with Blast Shields!)
+            local stacks = 0
+            for i = 1, 40 do
+                local aura = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
+                if not aura then break end
+                
+                -- [FIX] Wrap the name check in a pcall.
+                -- If we hit an encrypted Private Aura, the pcall silently catches the error 
+                -- instead of crashing the addon, allowing us to safely skip it!
+                local success, isMatch = pcall(function() return aura.name == vFrame.SOE_BaseGroup end)
+                
+                if success and isMatch then
+                    stacks = aura.applications or 0
+                    break
+                end
+            end
+
+            local isVisible = false
+            if vFrame.position == "Left" and stacks >= 3 then isVisible = true end
+            if vFrame.position == "Right" and stacks >= 4 then isVisible = true end
+
+            if isVisible then
+                if not vFrame.SOE_HasSnapshot then
+                    local snap = SOE.db.global.snapshots[vFrame.SOE_BaseGroup]
+                    
+                    local sideSnap = nil
+                    if vFrame.position == "Left" then
+                        sideSnap = snap and (snap.left or snap.right)
+                    else
+                        sideSnap = snap and (snap.right or snap.left)
+                    end
+                    
+                    if sideSnap then
+                        vFrame.SOE_OrigW = sideSnap.width or 256
+                        vFrame.SOE_OrigH = sideSnap.height or 256
+                        vFrame.SOE_TexCoords = sideSnap.texCoords
+                        vFrame.SOE_BaseCoords = sideSnap.texCoords
+                        vFrame.SOE_UseAtlas = sideSnap.isAtlas and sideSnap.texture or nil
+                        vFrame.SOE_UseTexture = not sideSnap.isAtlas and sideSnap.texture or nil
+                        vFrame.SOE_RealTexture = sideSnap.texture
+                        vFrame.SOE_HasSnapshot = true
+                    end
+                end
+
+                if vFrame.SOE_HasSnapshot then
+                    if not vFrame:IsShown() then vFrame:Show() end
+                    SOE:ApplyToOverlay(vFrame)
+                end
+            else
+                if vFrame:IsShown() then vFrame:Hide() end
+            end
+        end
+    end
 end
 
 function SOE:SnapshotOverlay(overlay)
@@ -636,12 +711,11 @@ function SOE:SnapshotOverlay(overlay)
     
     if not self.db.global.snapshots[group] then self.db.global.snapshots[group] = {} end
     
-    -- FIXED: Prevent corrupted snapshot dimensions
+    -- FIX: Removed the w <= 0 abort! Safely fallback to 256 so the camera always saves!
     local w = overlay.SOE_OrigW or 256
     local h = overlay.SOE_OrigH or 256
-    if w <= 0 or h <= 0 then return end -- reject 0x0 invisible frames
-    if w > 1024 then w = 256 end
-    if h > 1024 then h = 256 end
+    if w <= 0 then w = 256 end
+    if h <= 0 then h = 256 end
 
     local s = overlay.SOE_OrigScale or 1.0 
     local ulx, uly, llx, lly, urx, ury, lrx, lry = 0,0,0,1,1,0,1,1
@@ -649,7 +723,6 @@ function SOE:SnapshotOverlay(overlay)
          ulx, uly, llx, lly, urx, ury, lrx, lry = overlay.texture:GetTexCoord()
     end
     
-    -- FIXED: Rely on Blizzard's position tag first, fallback to math if missing
     local posStr = overlay.position and string.lower(overlay.position) or ""
     local isRight = string.find(posStr, "right") or (ulx and ulx > 0.4)
     local slot = isRight and "right" or "left"
@@ -676,7 +749,13 @@ end
 function SOE:PreviewSelected()
     if not selectedSpecID then print("|cff33ff99SOE:|r Select a Spec first.") return end
     
-    local snapshots = self.db.global.snapshots[selectedGroupName or "Unknown"]
+    -- FIX: Ensure it looks for "Demonic Core" instead of "Demonic Core (3-4)" in the DB
+    local baseGroupName = selectedGroupName
+    if baseGroupName and string.find(baseGroupName, "%(3%-4%)") then
+        baseGroupName = string.gsub(baseGroupName, " %(3%-4%)", "")
+    end
+    
+    local snapshots = self.db.global.snapshots[baseGroupName or "Unknown"]
     
     if selectedGroupName ~= "Maelstrom Weapon (Stage 1-4)" and (not snapshots or (not snapshots.left and not snapshots.right)) then
         print("|cff33ff99SOE:|r No snapshot data for " .. (selectedGroupName or "Unknown"))
@@ -1055,6 +1134,90 @@ function SOE:ChatCommand(input)
 end
 
 -----------------------------------------------------------------------
+-- NATIVE VIRTUAL PROC ENGINE (Live Combat Loop Driver)
+-----------------------------------------------------------------------
+SOE.VirtualFrames = {} 
+
+local VIRTUAL_PROCS = {
+    [264173] = { virtualID = 999264, baseGroup = "Demonic Core", overrideGroup = "Demonic Core (3-4)" },
+    [391401] = { virtualID = 999391, baseGroup = "Mind Flay: Insanity", overrideGroup = "Mind Flay: Insanity (3-4)" }
+}
+
+local function GetVirtualFrame(id, position, realSpellID, data)
+    local fName = "SOE_VirtualFrame_" .. id .. "_" .. position
+    local f = _G[fName]
+    if not f then
+        -- [THE JAILBREAK FIX] 
+        -- Parent the frame to UIParent instead of SpellActivationOverlayFrame!
+        -- This makes it completely immune to Blizzard's in-combat frame suppression.
+        f = CreateFrame("Frame", fName, UIParent)
+        f:SetFrameStrata("BACKGROUND")
+        
+        -- Sync it to the exact center of the screen so ApplyToOverlay math still works
+        f:SetAllPoints(UIParent) 
+        
+        f.IsDummy = true 
+        f.texture = f:CreateTexture(nil, "ARTWORK")
+        f.texture:SetAllPoints()
+        f.position = position
+        f.spellID = id
+        f.SOE_RealSpellID = realSpellID
+        f.SOE_BaseGroup = data.baseGroup
+        f.SOE_GroupName = data.overrideGroup
+        SOE:EnsureHelperExists(f)
+        table.insert(SOE.VirtualFrames, f)
+    end
+    return f
+end
+-- Build the frames instantly when the player logs in
+local InitTracker = CreateFrame("Frame")
+InitTracker:RegisterEvent("PLAYER_LOGIN")
+InitTracker:SetScript("OnEvent", function()
+    for realID, data in pairs(VIRTUAL_PROCS) do
+        GetVirtualFrame(data.virtualID, "Left", realID, data)
+        GetVirtualFrame(data.virtualID, "Right", realID, data)
+    end
+end)
+
+-- ==========================================
+-- VIRTUAL FRAME TESTER (/soetest)
+-- ==========================================
+SLASH_SOETEST1 = "/soetest"
+SlashCmdList["SOETEST"] = function(msg)
+    local command = string.lower(msg)
+    local virtualID = 999264 
+    local placeholderTexture = 1028139 
+    
+    if command == "off" then
+        if _G["SOE_VirtualFrame_" .. virtualID .. "_Left"] then _G["SOE_VirtualFrame_" .. virtualID .. "_Left"]:Hide() end
+        if _G["SOE_VirtualFrame_" .. virtualID .. "_Right"] then _G["SOE_VirtualFrame_" .. virtualID .. "_Right"]:Hide() end
+        print("|cff33ff99SOE:|r Virtual Test OFF.")
+        return
+    end
+
+    print("|cff33ff99SOE:|r Forcing 3rd/4th Stack Virtual Frames ON.")
+    
+    local leftFrame = GetVirtualFrame(virtualID, "Left")
+    local rightFrame = GetVirtualFrame(virtualID, "Right")
+    
+    leftFrame.SOE_GroupName = "Demonic Core (3-4)"
+    rightFrame.SOE_GroupName = "Demonic Core (3-4)"
+    
+    -- FIXED: Clear Atlas before forcing the numeric texture
+    leftFrame.SOE_UseAtlas = nil
+    leftFrame.SOE_UseTexture = placeholderTexture
+    leftFrame.SOE_RealTexture = placeholderTexture
+    leftFrame:Show()
+    SOE:ApplyToOverlay(leftFrame)
+    
+    rightFrame.SOE_UseAtlas = nil
+    rightFrame.SOE_UseTexture = placeholderTexture
+    rightFrame.SOE_RealTexture = placeholderTexture
+    rightFrame:Show()
+    SOE:ApplyToOverlay(rightFrame)
+end
+
+-----------------------------------------------------------------------
 -- 5. INITIALIZATION
 -----------------------------------------------------------------------
 
@@ -1089,11 +1252,11 @@ function SOE:OnInitialize()
                 name = "Open Configuration",
                 width = "double",
                 func = function()
-                    -- Automatically close the massive Blizzard Settings panel
+                    -- Use Blizzard's secure panel manager to close the UI
                     if SettingsPanel then 
-                        SettingsPanel:Hide() 
+                        HideUIPanel(SettingsPanel)
                     elseif InterfaceOptionsFrame then 
-                        InterfaceOptionsFrame:Hide() 
+                        HideUIPanel(InterfaceOptionsFrame)
                     end
                     
                     -- Open the standalone window
