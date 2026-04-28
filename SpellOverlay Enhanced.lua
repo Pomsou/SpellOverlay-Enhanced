@@ -16,7 +16,7 @@ local DUAL_PROCS = {
     ["Essence Burst"] = true, ["Killing Machine"] = true, ["Sudden Doom"] = true, ["Crimson Scourge"] = true,
     ["Lava Surge"] = true, ["High Tide"] = true, ["Nightfall"] = true, 
     ["Demonic Core"] = true, ["Surge of Light"] = true, ["Power of the Dark Side"] = true, ["Dark Thoughts"] = true,
-    ["Infusion of Light"] = true,
+    ["Infusion of Light"] = true, ["Mind Flay: Insanity"] = true,
     ["Ancient Arts"] = true, ["Blindside"] = true,
     ["Grand Crusader"] = true, ["Art of War"] = true,
     ["Voidfall"] = true, ["Light Stagger"] = true, ["Moderate Stagger"] = true, ["Heavy Stagger"] = true,
@@ -70,7 +70,7 @@ local SPELL_GROUPS = {
     [72] = { ["Rampage"] = { 209697 } },
     [71] = { ["Tactician"] = { 199864 } },
     [73] = { ["Shield Slam"] = { 224324 }, ["Riposte"] = { 5302 } },
-    [258] = { ["Shadowy Insight"] = { 375981 } },
+    [258] = { ["Shadowy Insight"] = { 375981 }, ["Mind Flay: Insanity"] = { 391401 } },
     [256] = { ["Power of the Dark Side"] = { 198069 }, ["Surge of Light"] = { 114255, 128654 } },
     [257] = { ["Surge of Light"] = { 114255 }, ["Benediction"] = { 1262755 } },
     [262] = { ["Lava Surge"] = { 77762, 77756 } },
@@ -1089,11 +1089,11 @@ function SOE:OnInitialize()
                 name = "Open Configuration",
                 width = "double",
                 func = function()
-                    -- Automatically close the massive Blizzard Settings panel
+                    -- Use Blizzard's secure panel manager to close the UI so it doesn't break the Escape key
                     if SettingsPanel then 
-                        SettingsPanel:Hide() 
+                        HideUIPanel(SettingsPanel)
                     elseif InterfaceOptionsFrame then 
-                        InterfaceOptionsFrame:Hide() 
+                        HideUIPanel(InterfaceOptionsFrame)
                     end
                     
                     -- Open the standalone window
