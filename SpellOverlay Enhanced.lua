@@ -12,7 +12,7 @@ SOE.LastMaelstromStack = 0
 -- 1. DATA & CONSTANTS
 -----------------------------------------------------------------------
 local DUAL_PROCS = {
-    ["Hot Streak"] = true, ["Heating Up"] = true, ["Hyperthermia"] = true, ["Fingers of Frost"] = true, ["Clearcasting"] = true, ["Clearcasting (2nd proc)"] = true, ["Clearcasting (3rd proc)"] = true, ["Overpowered Missiles"] = true,
+    ["Hot Streak"] = true, ["Heating Up"] = true, ["Hyperthermia"] = true, ["Fingers of Frost"] = true, ["Clearcasting"] = true, ["Clearcasting (2nd proc)"] = true, ["Clearcasting (3rd proc)"] = true, ["Arcane Soul"] = true,
     ["Essence Burst"] = true, ["Killing Machine"] = true, ["Sudden Doom"] = true, ["Crimson Scourge"] = true,
     ["Lava Surge"] = true, ["High Tide"] = true, ["Nightfall"] = true, 
     ["Demonic Core"] = true, ["Surge of Light"] = true, ["Power of the Dark Side"] = true, ["Dark Thoughts"] = true,
